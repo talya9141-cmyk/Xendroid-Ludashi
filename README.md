@@ -37,7 +37,8 @@ Please check the LICENSE file under the appropriate file header and directory fo
 ## Device Requirements
 - Snapdragon SoC, GEN 2 or higher
 - Adreno GPU 740 or higher. Lower 7xx have not been tested.
-
+- I tried to use UHD Intel graphics and I3 gen 10th cpu as i dont have powerful android device so i use emulation but nearest gpu to uhd using emulation is The Nearest Equivalent: It performs close to a Qualcomm Adreno 512 / Adreno 508 or an older ARM Mali-G71 MP2 found in mid-range smartphones from the 2017–2018 era (like chips used in older Snapdragon 6-series processors).
+  
 ## Recommended Drivers
 - You can get the drivers for your GPU from two sources
   - [Whitebelyash upstream drivers](https://github.com/whitebelyash/AdrenoToolsDrivers/releases)
