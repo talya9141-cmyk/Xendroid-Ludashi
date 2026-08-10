@@ -68,7 +68,8 @@ class TextureCache {
   virtual ~TextureCache();
 
   // Returns whether the actual scale is not smaller than the requested one.
-  static bool GetConfigDrawResolutionScale(uint32_t& x_out, uint32_t& y_out);
+  static bool GetConfigDrawResolutionScale(uint32_t& x_out, uint32_t& y_out,
+                                           float& factor_out);
 
   // Clamps the resolution scale based on device capabilities.
   // sparse_bind_supported: whether the device supports sparse/tiled resources
@@ -79,6 +80,9 @@ class TextureCache {
       uint32_t virtual_address_bits_per_resource = 0);
   uint32_t draw_resolution_scale_x() const { return draw_resolution_scale_x_; }
   uint32_t draw_resolution_scale_y() const { return draw_resolution_scale_y_; }
+  float draw_resolution_scale_factor() const {
+    return draw_resolution_scale_factor_;
+  }
 
   divisors::MagicDiv draw_resolution_scale_x_divisor() const {
     return draw_resolution_scale_x_divisor_;
@@ -594,7 +598,8 @@ class TextureCache {
   explicit TextureCache(const RegisterFile& register_file,
                         SharedMemory& shared_memory,
                         uint32_t draw_resolution_scale_x,
-                        uint32_t draw_resolution_scale_y);
+                        uint32_t draw_resolution_scale_y,
+                        float draw_resolution_scale_factor);
 
   const RegisterFile& register_file() const { return register_file_; }
   SharedMemory& shared_memory() const { return shared_memory_; }
@@ -730,6 +735,7 @@ class TextureCache {
   SharedMemory& shared_memory_;
   uint32_t draw_resolution_scale_x_;
   uint32_t draw_resolution_scale_y_;
+  float draw_resolution_scale_factor_;
   divisors::MagicDiv draw_resolution_scale_x_divisor_;
   divisors::MagicDiv draw_resolution_scale_y_divisor_;
   static const LoadShaderInfo load_shader_info_[kLoadShaderCount];

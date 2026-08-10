@@ -58,6 +58,8 @@ class GameSettingsViewModel(private val repo: GameSettingsRepository) : ViewMode
     override fun onBoolChanged(s: Setting.Bool, v: Boolean) { repo.setBool(s, v); refreshKey(s) }
     override fun currentInt(s: Setting.IntRange) = repo.intOf(s)
     override fun onIntChanged(s: Setting.IntRange, v: Int) { repo.setInt(s, v); refreshKey(s) }
+    override fun currentFloat(s: Setting.FloatRange) = repo.floatOf(s)
+    override fun onFloatChanged(s: Setting.FloatRange, v: Float) { repo.setFloat(s, v); refreshKey(s) }
     override fun currentListValue(s: Setting.ListChoice) = repo.listValueOf(s)
     override fun onListChanged(s: Setting.ListChoice, v: String) { repo.setListValue(s, v); refreshKey(s) }
     override fun currentDriverPath(s: Setting.Action) = repo.driverPathOf(s)

@@ -85,6 +85,8 @@ class GameSettingsRepository(private val store: ConfigStore, private val titleId
         ConfigValueShape.parseBool(overrides[s.key] ?: inheritedRaw(s), s.default)
     fun intOf(s: Setting.IntRange): Int =
         ConfigValueShape.parseInt(overrides[s.key] ?: inheritedRaw(s), s.default)
+    fun floatOf(s: Setting.FloatRange): Float =
+        ConfigValueShape.parseFloat(overrides[s.key] ?: inheritedRaw(s), s.default)
     fun listValueOf(s: Setting.ListChoice): String = overrides[s.key] ?: inheritedRaw(s)
     fun driverPathOf(s: Setting.Action): String = overrides[s.key] ?: ""
     fun inheritedLabel(s: Setting): String = labelFor(s, inheritedRaw(s))
@@ -93,6 +95,9 @@ class GameSettingsRepository(private val store: ConfigStore, private val titleId
     fun setBool(s: Setting.Bool, v: Boolean) { overrides[s.key] = ConfigValueShape.bool(v) }
     fun setInt(s: Setting.IntRange, v: Int) {
         overrides[s.key] = ConfigValueShape.int(v.coerceIn(s.min, s.max))
+    }
+    fun setFloat(s: Setting.FloatRange, v: Float) {
+        overrides[s.key] = ConfigValueShape.float(v.coerceIn(s.min, s.max))
     }
     fun setListValue(s: Setting.ListChoice, value: String) { overrides[s.key] = value }
     fun setDriverPath(s: Setting.Action, value: String) { overrides[s.key] = value }
@@ -132,6 +137,7 @@ class GameSettingsRepository(private val store: ConfigStore, private val titleId
     private fun putTyped(h: ConfigHandle, s: Setting, raw: String) = when (s) {
         is Setting.Bool       -> h.putBool(s.section, s.name, ConfigValueShape.parseBool(raw, s.default))
         is Setting.IntRange   -> h.putInt(s.section, s.name, ConfigValueShape.parseInt(raw, s.default))
+        is Setting.FloatRange -> h.putDouble(s.section, s.name, ConfigValueShape.parseFloat(raw, s.default).toDouble())
         is Setting.ListChoice -> h.putString(s.section, s.name, raw)
         is Setting.Action     -> h.putString(s.section, s.name, raw)
     }
@@ -139,6 +145,7 @@ class GameSettingsRepository(private val store: ConfigStore, private val titleId
     private fun schemaDefaultString(s: Setting): String = when (s) {
         is Setting.Bool       -> if (s.default) "true" else "false"
         is Setting.IntRange   -> s.default.toString()
+        is Setting.FloatRange -> ConfigValueShape.float(s.default)
         is Setting.ListChoice -> s.default
         is Setting.Action     -> s.default
     }

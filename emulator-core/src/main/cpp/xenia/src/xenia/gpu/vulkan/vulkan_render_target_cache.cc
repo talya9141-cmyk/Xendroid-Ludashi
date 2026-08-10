@@ -469,9 +469,11 @@ const VulkanRenderTargetCache::TransferModeInfo
 VulkanRenderTargetCache::VulkanRenderTargetCache(
     const RegisterFile& register_file, const Memory& memory,
     TraceWriter& trace_writer, uint32_t draw_resolution_scale_x,
-    uint32_t draw_resolution_scale_y, VulkanCommandProcessor& command_processor)
+    uint32_t draw_resolution_scale_y, float draw_resolution_scale_factor,
+    VulkanCommandProcessor& command_processor)
     : RenderTargetCache(register_file, memory, &trace_writer,
-                        draw_resolution_scale_x, draw_resolution_scale_y),
+                        draw_resolution_scale_x, draw_resolution_scale_y,
+                        draw_resolution_scale_factor),
       command_processor_(command_processor),
       trace_writer_(trace_writer) {}
 
@@ -2755,8 +2757,8 @@ bool VulkanRenderTargetCache::Resolve(
 
   draw_util::ResolveInfo resolve_info;
   if (!draw_util::GetResolveInfo(
-          register_file(), memory, trace_writer_, draw_resolution_scale_x(),
-          draw_resolution_scale_y(), IsFixedRG16TruncatedToMinus1To1(),
+          register_file(), memory, trace_writer_, GetDrawScaleX(),
+          GetDrawScaleY(), IsFixedRG16TruncatedToMinus1To1(),
           IsFixedRGBA16TruncatedToMinus1To1(), resolve_info)) {
     XELOGE("Resolve: GetResolveInfo failed");
     return false;
@@ -2803,10 +2805,10 @@ bool VulkanRenderTargetCache::Resolve(
       if (copy_native) {
         // Redo the resolve info at 1x1 so the scale-dependent fields match
         // what the unscaled copy shaders expect.
-        if (!draw_util::GetResolveInfo(register_file(), memory, trace_writer_,
-                                       1, 1, IsFixedRG16TruncatedToMinus1To1(),
-                                       IsFixedRGBA16TruncatedToMinus1To1(),
-                                       resolve_info)) {
+        if (!draw_util::GetResolveInfo(
+                register_file(), memory, trace_writer_, 1.0f, 1.0f,
+                IsFixedRG16TruncatedToMinus1To1(),
+                IsFixedRGBA16TruncatedToMinus1To1(), resolve_info)) {
           return false;
         }
       }
@@ -2814,8 +2816,8 @@ bool VulkanRenderTargetCache::Resolve(
       // only known once copy_native is decided, so derive it here - the fork's
       // in-pass and direct-host paths below consume it.
       copy_shader = resolve_info.GetCopyShader(
-          copy_native ? 1 : draw_resolution_scale_x(),
-          copy_native ? 1 : draw_resolution_scale_y(), copy_shader_constants,
+          copy_native ? 1.0f : GetDrawScaleX(),
+          copy_native ? 1.0f : GetDrawScaleY(), copy_shader_constants,
           copy_group_count_x, copy_group_count_y);
       assert_true(copy_group_count_x && copy_group_count_y);
       // Try the on-tile resolve before dumping the owning render targets.
@@ -8793,10 +8795,10 @@ VkPipeline VulkanRenderTargetCache::GetDumpPipeline(DumpPipelineKey key) {
     // is extracted since MSAA isn't affected by scale.
     source_pixel_x = builder.createBinOp(
         spv::OpUDiv, type_uint, source_pixel_x,
-        builder.makeUintConstant(draw_resolution_scale_x()));
+        builder.makeUintConstant(uint32_t(draw_resolution_scale_x())));
     source_pixel_y = builder.createBinOp(
         spv::OpUDiv, type_uint, source_pixel_y,
-        builder.makeUintConstant(draw_resolution_scale_y()));
+        builder.makeUintConstant(uint32_t(draw_resolution_scale_y())));
   }
 
   // Load the source, and pack the value into one or two 32-bit integers.
@@ -9201,13 +9203,15 @@ void VulkanRenderTargetCache::DumpRenderTargets(uint32_t dump_base,
       command_processor_.SubmitBarriers(true);
       // The native layout has a 1x1 footprint.
       command_buffer.CmdVkDispatch(
-          ((native_layout ? 1 : draw_resolution_scale_x()) *
-               (xenos::kEdramTileWidthSamples >> uint32_t(rt_key.Is64bpp())) *
-               dispatch.width_tiles +
+          (uint32_t(float(native_layout ? 1 : draw_resolution_scale_x()) *
+                    float(xenos::kEdramTileWidthSamples >>
+                          uint32_t(rt_key.Is64bpp())) *
+                    float(dispatch.width_tiles)) +
            (kDumpSamplesPerGroupX - 1)) /
               kDumpSamplesPerGroupX,
-          ((native_layout ? 1 : draw_resolution_scale_y()) *
-               xenos::kEdramTileHeightSamples * dispatch.height_tiles +
+          (uint32_t(float(native_layout ? 1 : draw_resolution_scale_y()) *
+                    float(xenos::kEdramTileHeightSamples) *
+                    float(dispatch.height_tiles)) +
            (kDumpSamplesPerGroupY - 1)) /
               kDumpSamplesPerGroupY,
           1);

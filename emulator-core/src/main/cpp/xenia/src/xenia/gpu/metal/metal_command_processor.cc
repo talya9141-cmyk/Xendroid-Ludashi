@@ -1252,7 +1252,7 @@ bool MetalCommandProcessor::SetupContext() {
 
   // Initialize render target cache
   render_target_cache_ = std::make_unique<MetalRenderTargetCache>(
-      *register_file_, *memory_, &trace_writer_, 1, 1, *this);
+      *register_file_, *memory_, &trace_writer_, 1, 1, 1.0f, *this);
   if (!render_target_cache_->Initialize()) {
     XELOGE("Failed to initialize Metal render target cache");
     return false;

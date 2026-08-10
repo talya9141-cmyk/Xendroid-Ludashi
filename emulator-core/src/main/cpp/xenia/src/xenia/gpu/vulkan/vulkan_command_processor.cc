@@ -307,8 +307,14 @@ std::string VulkanCommandProcessor::GetTitleStateSuffix() const {
       texture_cache_ ? texture_cache_->draw_resolution_scale_x() : 1;
   uint32_t draw_resolution_scale_y =
       texture_cache_ ? texture_cache_->draw_resolution_scale_y() : 1;
-  if (draw_resolution_scale_x > 1 || draw_resolution_scale_y > 1) {
+  float draw_resolution_scale_factor =
+      texture_cache_ ? texture_cache_->draw_resolution_scale_factor() : 1.0f;
+  if (draw_resolution_scale_x > 1 || draw_resolution_scale_y > 1 ||
+      draw_resolution_scale_factor != 1.0f) {
     suffix << ' ' << draw_resolution_scale_x << 'x' << draw_resolution_scale_y;
+    if (draw_resolution_scale_factor != 1.0f) {
+      suffix << " (" << draw_resolution_scale_factor << "x)";
+    }
   }
   return suffix.str();
 }
@@ -526,9 +532,11 @@ bool VulkanCommandProcessor::SetupContext() {
   // Requires the transient descriptor set layouts.
   // Get draw resolution scale and clamp based on device capabilities
   uint32_t draw_resolution_scale_x, draw_resolution_scale_y;
+  float draw_resolution_scale_factor;
   bool draw_resolution_scale_not_clamped =
       TextureCache::GetConfigDrawResolutionScale(draw_resolution_scale_x,
-                                                 draw_resolution_scale_y);
+                                                 draw_resolution_scale_y,
+                                                 draw_resolution_scale_factor);
   // Check if sparse binding is supported for resolution scaling
   bool has_sparse_binding = device_properties.sparseBinding &&
                             device_properties.sparseResidencyBuffer;
@@ -546,7 +554,7 @@ bool VulkanCommandProcessor::SetupContext() {
 
   render_target_cache_ = std::make_unique<VulkanRenderTargetCache>(
       *register_file_, *memory_, trace_writer_, draw_resolution_scale_x,
-      draw_resolution_scale_y, *this);
+      draw_resolution_scale_y, draw_resolution_scale_factor, *this);
   if (!render_target_cache_->Initialize(shared_memory_binding_count)) {
     XELOGE("Failed to initialize the render target cache");
     return false;
@@ -623,7 +631,8 @@ bool VulkanCommandProcessor::SetupContext() {
   // Use the same draw resolution scale as render target cache
   texture_cache_ = VulkanTextureCache::Create(
       *register_file_, *shared_memory_, draw_resolution_scale_x,
-      draw_resolution_scale_y, *this, guest_shader_pipeline_stages_);
+      draw_resolution_scale_y, draw_resolution_scale_factor, *this,
+      guest_shader_pipeline_stages_);
   if (!texture_cache_) {
     XELOGE("Failed to initialize the texture cache");
     return false;
@@ -4353,12 +4362,13 @@ bool VulkanCommandProcessor::IssueDraw(xenos::PrimitiveType prim_type,
 
   // Resolution scale of this draw, which may be 1x1 because of
   // draw_resolution_scale_threshold, which the divisors have to match too.
-  uint32_t draw_resolution_scale_x = render_target_cache_->GetDrawScaleX();
-  uint32_t draw_resolution_scale_y = render_target_cache_->GetDrawScaleY();
+  float draw_resolution_scale_x = render_target_cache_->GetDrawScaleX();
+  float draw_resolution_scale_y = render_target_cache_->GetDrawScaleY();
   // ZPD segments can't mix scales. The resolved sample count is divided by
   // one scale area per segment. Split before the FSI counter index goes
   // into system constants.
-  UpdateZPDScale(draw_resolution_scale_x * draw_resolution_scale_y);
+  UpdateZPDScale(uint32_t(draw_resolution_scale_x) *
+                 uint32_t(draw_resolution_scale_y));
   draw_util::GetViewportInfoArgs gviargs{};
   gviargs.Setup(
       draw_resolution_scale_x, draw_resolution_scale_y,
@@ -6786,7 +6796,7 @@ void VulkanCommandProcessor::DestroyScratchBuffer() {
 void VulkanCommandProcessor::UpdateDynamicState(
     const draw_util::ViewportInfo& viewport_info, bool primitive_polygonal,
     reg::RB_DEPTHCONTROL normalized_depth_control,
-    uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+    float draw_resolution_scale_x, float draw_resolution_scale_y,
     bool depth_bias_in_pixel_shader,
     const VulkanPipelineCache::DynamicState& pipeline_dynamic_state) {
 #if XE_GPU_FINE_GRAINED_DRAW_SCOPES
@@ -7231,8 +7241,8 @@ void VulkanCommandProcessor::UpdateSystemConstantValues(
       RenderTargetCache::Path::kPixelShaderInterlock;
   // Resolution scale of this draw.
   // 1x1 with draw_resolution_scale_threshold (FSI only).
-  uint32_t draw_resolution_scale_x = render_target_cache_->GetDrawScaleX();
-  uint32_t draw_resolution_scale_y = render_target_cache_->GetDrawScaleY();
+  float draw_resolution_scale_x = render_target_cache_->GetDrawScaleX();
+  float draw_resolution_scale_y = render_target_cache_->GetDrawScaleY();
 
   // Get the color info register values for each render target. Also, for FSI,
   // exclude components that don't exist in the format from the write mask.

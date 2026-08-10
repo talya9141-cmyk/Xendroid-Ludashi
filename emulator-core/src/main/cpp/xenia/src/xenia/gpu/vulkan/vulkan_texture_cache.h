@@ -126,12 +126,13 @@ class VulkanTextureCache final : public TextureCache {
   static std::unique_ptr<VulkanTextureCache> Create(
       const RegisterFile& register_file, VulkanSharedMemory& shared_memory,
       uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+      float draw_resolution_scale_factor,
       VulkanCommandProcessor& command_processor,
       VkPipelineStageFlags guest_shader_pipeline_stages) {
     std::unique_ptr<VulkanTextureCache> texture_cache(new VulkanTextureCache(
         register_file, shared_memory, draw_resolution_scale_x,
-        draw_resolution_scale_y, command_processor,
-        guest_shader_pipeline_stages));
+        draw_resolution_scale_y, draw_resolution_scale_factor,
+        command_processor, guest_shader_pipeline_stages));
     if (!texture_cache->Initialize()) {
       return nullptr;
     }
@@ -499,6 +500,7 @@ class VulkanTextureCache final : public TextureCache {
   explicit VulkanTextureCache(
       const RegisterFile& register_file, VulkanSharedMemory& shared_memory,
       uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+      float draw_resolution_scale_factor,
       VulkanCommandProcessor& command_processor,
       VkPipelineStageFlags guest_shader_pipeline_stages);
 

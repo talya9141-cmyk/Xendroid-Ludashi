@@ -460,9 +460,10 @@ void GetHostViewportInfo(GetViewportInfoArgs* XE_RESTRICT args,
       viewport_info_out.xy_offset[i] = 0;
       uint32_t extent_axis_unscaled =
           std::min(xenos::kTexture2DCubeMaxWidthHeight, xy_max_unscaled[i]);
-      viewport_info_out.xy_extent[i] =
-          extent_axis_unscaled *
-          (i ? args->draw_resolution_scale_y : args->draw_resolution_scale_x);
+      viewport_info_out.xy_extent[i] = uint32_t(
+          float(extent_axis_unscaled) *
+          (i ? args->draw_resolution_scale_factor_y
+             : args->draw_resolution_scale_factor_x));
       float extent_axis_unscaled_float = float(extent_axis_unscaled);
 
       float pixels_to_ndc_axis = ViewportRecip2_0(extent_axis_unscaled_float);
@@ -490,8 +491,8 @@ void GetHostViewportInfo(GetViewportInfoArgs* XE_RESTRICT args,
       // vertices if we did flooring in host pixels. Instead of flooring, also
       // doing truncation for simplicity - since maxing with 0 is done anyway
       // (we only return viewports in the positive quarter-plane).
-      uint32_t axis_resolution_scale =
-          i ? args->draw_resolution_scale_y : args->draw_resolution_scale_x;
+      float axis_resolution_scale = i ? args->draw_resolution_scale_factor_y
+                                      : args->draw_resolution_scale_factor_x;
       float offset_axis = offset_base_xy[i] + offset_add_xy[i];
       float scale_axis = scale_xy[i];
       float scale_axis_abs = std::abs(scale_xy[i]);
@@ -501,8 +502,10 @@ void GetHostViewportInfo(GetViewportInfoArgs* XE_RESTRICT args,
       uint32_t axis_1_int = uint32_t(xe::clamp_float(
           offset_axis + scale_axis_abs, 0.0f, axis_max_unscaled_float));
       uint32_t axis_extent_int = axis_1_int - axis_0_int;
-      viewport_info_out.xy_offset[i] = axis_0_int * axis_resolution_scale;
-      viewport_info_out.xy_extent[i] = axis_extent_int * axis_resolution_scale;
+      viewport_info_out.xy_offset[i] =
+          uint32_t(float(axis_0_int) * axis_resolution_scale);
+      viewport_info_out.xy_extent[i] =
+          uint32_t(float(axis_extent_int) * axis_resolution_scale);
       float ndc_scale_axis;
       float ndc_offset_axis;
       if (axis_extent_int) {
@@ -1028,8 +1031,8 @@ constexpr ResolveCopyShaderInfo
 };
 XE_MSVC_OPTIMIZE_SMALL()
 bool GetResolveInfo(const RegisterFile& regs, const Memory& memory,
-                    TraceWriter& trace_writer, uint32_t draw_resolution_scale_x,
-                    uint32_t draw_resolution_scale_y,
+                    TraceWriter& trace_writer, float draw_resolution_scale_x,
+                    float draw_resolution_scale_y,
                     bool fixed_rg16_truncated_to_minus_1_to_1,
                     bool fixed_rgba16_truncated_to_minus_1_to_1,
                     ResolveInfo& info_out) {
@@ -1037,6 +1040,8 @@ bool GetResolveInfo(const RegisterFile& regs, const Memory& memory,
   // captures. Also initialize an invalid resolve to empty.
   info_out.coordinate_info.packed = 0;
   info_out.height_div_8 = 0;
+  info_out.draw_resolution_scale_factor_x = draw_resolution_scale_x;
+  info_out.draw_resolution_scale_factor_y = draw_resolution_scale_y;
 
   auto rb_copy_control = regs.Get<reg::RB_COPY_CONTROL>();
   info_out.rb_copy_control = rb_copy_control;
@@ -1177,10 +1182,12 @@ bool GetResolveInfo(const RegisterFile& regs, const Memory& memory,
   info_out.height_div_8 =
       uint32_t(y1 - y0) >> xenos::kResolveAlignmentPixelsLog2;
   // 3 bits for each.
-  assert_true(draw_resolution_scale_x <= 7);
-  assert_true(draw_resolution_scale_y <= 7);
-  info_out.coordinate_info.draw_resolution_scale_x = draw_resolution_scale_x;
-  info_out.coordinate_info.draw_resolution_scale_y = draw_resolution_scale_y;
+  assert_true(draw_resolution_scale_x <= 7.0f);
+  assert_true(draw_resolution_scale_y <= 7.0f);
+  info_out.coordinate_info.draw_resolution_scale_x =
+      uint32_t(draw_resolution_scale_x);
+  info_out.coordinate_info.draw_resolution_scale_y =
+      uint32_t(draw_resolution_scale_y);
 
   // Handle the destination.
   bool is_depth =
@@ -1455,7 +1462,7 @@ static constexpr bool ColorResolveNumberFormatMatches(
 }
 
 ResolveCopyShaderIndex ResolveInfo::GetCopyShader(
-    uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+    float draw_resolution_scale_x, float draw_resolution_scale_y,
     ResolveCopyShaderConstants& constants_out, uint32_t& group_count_x_out,
     uint32_t& group_count_y_out) const {
   ResolveCopyShaderIndex shader = ResolveCopyShaderIndex::kUnknown;
@@ -1519,11 +1526,12 @@ ResolveCopyShaderIndex ResolveInfo::GetCopyShader(
   constants_out.dest_base = copy_dest_base;
 
   if (shader != ResolveCopyShaderIndex::kUnknown) {
-    uint32_t width =
-        (coordinate_info.width_div_8 << xenos::kResolveAlignmentPixelsLog2) *
-        draw_resolution_scale_x;
-    uint32_t height = (height_div_8 << xenos::kResolveAlignmentPixelsLog2) *
-                      draw_resolution_scale_y;
+    uint32_t width = uint32_t(std::ceil(
+        float(coordinate_info.width_div_8 << xenos::kResolveAlignmentPixelsLog2) *
+        draw_resolution_scale_x));
+    uint32_t height = uint32_t(std::ceil(
+        float(height_div_8 << xenos::kResolveAlignmentPixelsLog2) *
+        draw_resolution_scale_y));
     const ResolveCopyShaderInfo& shader_info =
         resolve_copy_shader_info[size_t(shader)];
     group_count_x_out = (width + ((1 << shader_info.group_size_x_log2) - 1)) >>

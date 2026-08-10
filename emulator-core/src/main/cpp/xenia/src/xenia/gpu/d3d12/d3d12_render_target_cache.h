@@ -46,10 +46,12 @@ class D3D12RenderTargetCache final : public RenderTargetCache {
                          const Memory& memory, TraceWriter& trace_writer,
                          uint32_t draw_resolution_scale_x,
                          uint32_t draw_resolution_scale_y,
+                         float draw_resolution_scale_factor,
                          D3D12CommandProcessor& command_processor,
                          bool bindless_resources_used)
       : RenderTargetCache(register_file, memory, &trace_writer,
-                          draw_resolution_scale_x, draw_resolution_scale_y),
+                          draw_resolution_scale_x, draw_resolution_scale_y,
+                          draw_resolution_scale_factor),
         command_processor_(command_processor),
         trace_writer_(trace_writer),
         bindless_resources_used_(bindless_resources_used) {}

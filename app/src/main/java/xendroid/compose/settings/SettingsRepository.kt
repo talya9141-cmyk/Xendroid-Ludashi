@@ -77,6 +77,7 @@ class SettingsRepository(private val store: ConfigStore) {
     private fun schemaDefaultString(s: Setting): String = when (s) {
         is Setting.Bool      -> if (s.default) "true" else "false"
         is Setting.IntRange  -> s.default.toString()
+        is Setting.FloatRange -> ConfigValueShape.float(s.default)
         is Setting.ListChoice -> s.default
         is Setting.Action    -> s.default
     }
@@ -86,6 +87,10 @@ class SettingsRepository(private val store: ConfigStore) {
     fun boolOf(s: Setting.Bool): Boolean = live?.getBool(s.section, s.name, s.default) ?: s.default
     @Synchronized
     fun intOf(s: Setting.IntRange): Int = live?.getInt(s.section, s.name, s.default) ?: s.default
+    @Synchronized
+    fun floatOf(s: Setting.FloatRange): Float =
+        live?.getString(s.section, s.name)?.toFloatOrNull() ?: s.default
+
     @Synchronized
     fun listValueOf(s: Setting.ListChoice): String =
         live?.getString(s.section, s.name) ?: s.default
@@ -98,6 +103,10 @@ class SettingsRepository(private val store: ConfigStore) {
     @Synchronized
     fun setInt(s: Setting.IntRange, v: Int) {
         handle().putInt(s.section, s.name, v.coerceIn(s.min, s.max)); dirty = true
+    }
+    @Synchronized
+    fun setFloat(s: Setting.FloatRange, v: Float) {
+        handle().putString(s.section, s.name, ConfigValueShape.float(v.coerceIn(s.min, s.max))); dirty = true
     }
     @Synchronized
     fun setListValue(s: Setting.ListChoice, value: String) {

@@ -2634,10 +2634,11 @@ VkImageView VulkanTextureCache::VulkanTexture::GetOrCreate3DAs2DImageView(
 VulkanTextureCache::VulkanTextureCache(
     const RegisterFile& register_file, VulkanSharedMemory& shared_memory,
     uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+    float draw_resolution_scale_factor,
     VulkanCommandProcessor& command_processor,
     VkPipelineStageFlags guest_shader_pipeline_stages)
     : TextureCache(register_file, shared_memory, draw_resolution_scale_x,
-                   draw_resolution_scale_y),
+                   draw_resolution_scale_y, draw_resolution_scale_factor),
       command_processor_(command_processor),
       guest_shader_pipeline_stages_(guest_shader_pipeline_stages) {}
 

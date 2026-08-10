@@ -12,10 +12,13 @@ object ConfigValueShape {
 
     /** Always include a '.' so the value round-trips as a TOML double, never an int. */
     fun double(v: Double): String { val s = v.toString(); return if (s.contains('.')) s else "$s.0" }
+    fun float(v: Float) = double(v.toDouble())
 
     fun parseBool(raw: String?, def: Boolean) = when (raw) { "true" -> true; "false" -> false; else -> def }
 
     /** Native ints come back via std::to_string; tolerate a value that round-tripped
      *  as a double (e.g. "8.0"). */
     fun parseInt(raw: String?, def: Int) = raw?.toIntOrNull() ?: raw?.toDoubleOrNull()?.toInt() ?: def
+
+    fun parseFloat(raw: String?, def: Float) = raw?.toFloatOrNull() ?: def
 }

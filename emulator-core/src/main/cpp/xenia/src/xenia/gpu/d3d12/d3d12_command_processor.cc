@@ -619,9 +619,11 @@ bool D3D12CommandProcessor::SetupContext() {
   // Get the draw resolution scale for the render target cache and the texture
   // cache.
   uint32_t draw_resolution_scale_x, draw_resolution_scale_y;
+  float draw_resolution_scale_factor;
   bool draw_resolution_scale_not_clamped =
       TextureCache::GetConfigDrawResolutionScale(draw_resolution_scale_x,
-                                                 draw_resolution_scale_y);
+                                                 draw_resolution_scale_y,
+                                                 draw_resolution_scale_factor);
 
   bool has_tiled_resources =
       provider.GetTiledResourcesTier() >= D3D12_TILED_RESOURCES_TIER_1;
@@ -653,7 +655,8 @@ bool D3D12CommandProcessor::SetupContext() {
   // know if using rasterizer-ordered views for the bindless root signature.
   render_target_cache_ = std::make_unique<D3D12RenderTargetCache>(
       *register_file_, *memory_, trace_writer_, draw_resolution_scale_x,
-      draw_resolution_scale_y, *this, bindless_resources_used_);
+      draw_resolution_scale_y, draw_resolution_scale_factor, *this,
+      bindless_resources_used_);
   if (!render_target_cache_->Initialize()) {
     XELOGE("Failed to initialize the render target cache");
     return false;
@@ -1094,7 +1097,8 @@ bool D3D12CommandProcessor::SetupContext() {
 
   texture_cache_ = D3D12TextureCache::Create(
       *register_file_, *shared_memory_, draw_resolution_scale_x,
-      draw_resolution_scale_y, *this, bindless_resources_used_);
+      draw_resolution_scale_y, draw_resolution_scale_factor, *this,
+      bindless_resources_used_);
   if (!texture_cache_) {
     XELOGE("Failed to initialize the texture cache");
     return false;

@@ -107,6 +107,7 @@ class MetalRenderTargetCache final : public gpu::RenderTargetCache {
                          const Memory& memory, TraceWriter* trace_writer,
                          uint32_t draw_resolution_scale_x,
                          uint32_t draw_resolution_scale_y,
+                         float draw_resolution_scale_factor,
                          MetalCommandProcessor& command_processor);
   ~MetalRenderTargetCache() override;
 

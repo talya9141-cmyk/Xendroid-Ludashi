@@ -6,6 +6,8 @@ private fun desc(n: String) = SettingDescriptions.byName[n] ?: ""
 private fun b(s: String, n: String, t: String, d: Boolean) = Setting.Bool(s, n, t, d, desc(n))
 private fun i(s: String, n: String, t: String, d: Int, lo: Int, hi: Int) =
     Setting.IntRange(s, n, t, d, lo, hi, desc(n))
+private fun f(s: String, n: String, t: String, d: Float, lo: Float, hi: Float, step: Float) =
+    Setting.FloatRange(s, n, t, d, lo, hi, step, desc(n))
 private fun l(s: String, n: String, t: String, d: String, vararg o: Pair<String, String>) =
     Setting.ListChoice(s, n, t, d, o.map { ListOption(it.first, it.second) }, desc(n))
 
@@ -205,6 +207,7 @@ object SettingsSchema {
             l("GPU", "draw_resolution_scale_y", "Resolution scale, height (real)", "1",
                 "1" to "1x", "2" to "2x", "3" to "3x"),
             b("GPU", "draw_resolution_scaled_texture_offsets", "Draw resolution-scaled texture offsets", true),
+            f("GPU", "draw_resolution_scale_factor", "Internal resolution scale factor", 1.0f, 0.25f, 1.0f, 0.05f),
             l("GPU", "gpu", "GPU backend", "vulkan",
                 "vulkan" to "vulkan", "null" to "null"),
             b("GPU", "depth_float24_convert_in_pixel_shader", "Depth float24 convert in pixel shader", false),

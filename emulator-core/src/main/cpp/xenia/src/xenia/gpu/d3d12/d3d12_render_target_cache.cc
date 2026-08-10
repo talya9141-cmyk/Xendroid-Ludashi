@@ -1344,8 +1344,8 @@ bool D3D12RenderTargetCache::Resolve(const Memory& memory,
   draw_util::ResolveInfo resolve_info;
   bool fixed_16_truncated_to_minus_1_to_1 = IsFixed16TruncatedToMinus1To1();
   if (!draw_util::GetResolveInfo(
-          register_file(), memory, trace_writer_, draw_resolution_scale_x(),
-          draw_resolution_scale_y(), fixed_16_truncated_to_minus_1_to_1,
+          register_file(), memory, trace_writer_, GetDrawScaleX(),
+          GetDrawScaleY(), fixed_16_truncated_to_minus_1_to_1,
           fixed_16_truncated_to_minus_1_to_1, resolve_info)) {
     return false;
   }
@@ -1382,10 +1382,10 @@ bool D3D12RenderTargetCache::Resolve(const Memory& memory,
       if (copy_native) {
         // Redo the resolve info at 1x1 so the scale-dependent fields match
         // what the unscaled copy shaders expect.
-        if (!draw_util::GetResolveInfo(register_file(), memory, trace_writer_,
-                                       1, 1, fixed_16_truncated_to_minus_1_to_1,
-                                       fixed_16_truncated_to_minus_1_to_1,
-                                       resolve_info)) {
+        if (!draw_util::GetResolveInfo(
+                register_file(), memory, trace_writer_, 1.0f, 1.0f,
+                fixed_16_truncated_to_minus_1_to_1,
+                fixed_16_truncated_to_minus_1_to_1, resolve_info)) {
           return false;
         }
       }
@@ -1401,8 +1401,8 @@ bool D3D12RenderTargetCache::Resolve(const Memory& memory,
     draw_util::ResolveCopyShaderConstants copy_shader_constants;
     uint32_t copy_group_count_x, copy_group_count_y;
     draw_util::ResolveCopyShaderIndex copy_shader = resolve_info.GetCopyShader(
-        copy_native ? 1 : draw_resolution_scale_x(),
-        copy_native ? 1 : draw_resolution_scale_y(), copy_shader_constants,
+        copy_native ? 1.0f : GetDrawScaleX(),
+        copy_native ? 1.0f : GetDrawScaleY(), copy_shader_constants,
         copy_group_count_x, copy_group_count_y);
     assert_true(copy_group_count_x && copy_group_count_y);
     if (copy_shader != draw_util::ResolveCopyShaderIndex::kUnknown) {

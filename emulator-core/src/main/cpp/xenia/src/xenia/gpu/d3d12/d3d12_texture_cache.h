@@ -78,10 +78,12 @@ class D3D12TextureCache final : public TextureCache {
   static std::unique_ptr<D3D12TextureCache> Create(
       const RegisterFile& register_file, D3D12SharedMemory& shared_memory,
       uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+      float draw_resolution_scale_factor,
       D3D12CommandProcessor& command_processor, bool bindless_resources_used) {
     std::unique_ptr<D3D12TextureCache> texture_cache(new D3D12TextureCache(
         register_file, shared_memory, draw_resolution_scale_x,
-        draw_resolution_scale_y, command_processor, bindless_resources_used));
+        draw_resolution_scale_y, draw_resolution_scale_factor,
+        command_processor, bindless_resources_used));
     if (!texture_cache->Initialize()) {
       return nullptr;
     }
@@ -701,6 +703,7 @@ class D3D12TextureCache final : public TextureCache {
                              D3D12SharedMemory& shared_memory,
                              uint32_t draw_resolution_scale_x,
                              uint32_t draw_resolution_scale_y,
+                             float draw_resolution_scale_factor,
                              D3D12CommandProcessor& command_processor,
                              bool bindless_resources_used);
 

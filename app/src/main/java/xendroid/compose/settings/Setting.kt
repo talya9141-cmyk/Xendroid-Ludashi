@@ -24,6 +24,14 @@ sealed interface Setting {
         override val desc: String = "",
     ) : Setting
 
+    /** SeekBar-backed float. [min]/[max]/[step] for continuous adjustment. */
+    data class FloatRange(
+        override val section: String, override val name: String,
+        override val title: String, val default: Float, val min: Float, val max: Float,
+        val step: Float,
+        override val desc: String = "",
+    ) : Setting
+
     /** Stored verbatim as a string; options preserve non-contiguous values. */
     data class ListChoice(
         override val section: String, override val name: String,

@@ -56,7 +56,7 @@ sealed class UpdateResult {
 
 interface GithubApi {
 
-    @GET("repos/rfandango/XenDroid/releases/latest")
+    @GET("repos/talya9141-cmyk/Xendroid-Ludashi/releases/latest")
     suspend fun latestRelease(): GithubRelease
 }
 
@@ -120,7 +120,7 @@ suspend fun checkForUpdates(): UpdateResult {
     Log.d("Updater", "Current: $currentHash")
 
     val latestHash = release.tagName
-        .removePrefix("XenDroid-")
+        .removePrefix("Xendroid-Ludashi-")
         .trim()
 
     Log.d("Updater", "Latest: $latestHash")

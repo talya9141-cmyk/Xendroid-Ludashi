@@ -711,9 +711,11 @@ MetalRenderTargetCache::MetalRenderTarget::~MetalRenderTarget() {
 MetalRenderTargetCache::MetalRenderTargetCache(
     const RegisterFile& register_file, const Memory& memory,
     TraceWriter* trace_writer, uint32_t draw_resolution_scale_x,
-    uint32_t draw_resolution_scale_y, MetalCommandProcessor& command_processor)
+    uint32_t draw_resolution_scale_y, float draw_resolution_scale_factor,
+    MetalCommandProcessor& command_processor)
     : RenderTargetCache(register_file, memory, trace_writer,
-                        draw_resolution_scale_x, draw_resolution_scale_y),
+                        draw_resolution_scale_x, draw_resolution_scale_y,
+                        draw_resolution_scale_factor),
       command_processor_(command_processor),
       trace_writer_(trace_writer) {}
 
@@ -4618,9 +4620,9 @@ bool MetalRenderTargetCache::Resolve(Memory& memory, uint32_t& written_address,
   }
 
   if (!draw_util::GetResolveInfo(regs, memory, *trace_writer_,
-                                 draw_resolution_scale_x(),
-                                 draw_resolution_scale_y(), fixed_rg16_trunc,
-                                 fixed_rgba16_trunc, resolve_info)) {
+                                 GetDrawScaleX(), GetDrawScaleY(),
+                                 fixed_rg16_trunc, fixed_rgba16_trunc,
+                                 resolve_info)) {
     XELOGE("MetalRenderTargetCache::Resolve: GetResolveInfo failed");
     return false;
   }
@@ -4670,8 +4672,8 @@ bool MetalRenderTargetCache::Resolve(Memory& memory, uint32_t& written_address,
     draw_util::ResolveCopyShaderConstants copy_constants;
     uint32_t group_count_x = 0, group_count_y = 0;
     draw_util::ResolveCopyShaderIndex copy_shader = resolve_info.GetCopyShader(
-        draw_resolution_scale_x(), draw_resolution_scale_y(), copy_constants,
-        group_count_x, group_count_y);
+        GetDrawScaleX(), GetDrawScaleY(), copy_constants, group_count_x,
+        group_count_y);
 
     // Select the appropriate Metal pipeline for this shader.
     MTL::ComputePipelineState* pipeline = nullptr;

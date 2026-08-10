@@ -12,6 +12,8 @@ interface SettingsHost {
     fun onBoolChanged(s: Setting.Bool, v: Boolean)
     fun currentInt(s: Setting.IntRange): Int
     fun onIntChanged(s: Setting.IntRange, v: Int)
+    fun currentFloat(s: Setting.FloatRange): Float
+    fun onFloatChanged(s: Setting.FloatRange, v: Float)
     fun currentListValue(s: Setting.ListChoice): String
     fun onListChanged(s: Setting.ListChoice, value: String)
     fun currentDriverPath(s: Setting.Action): String

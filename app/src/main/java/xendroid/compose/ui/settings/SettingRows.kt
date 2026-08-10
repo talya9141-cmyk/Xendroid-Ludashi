@@ -29,6 +29,7 @@ import xendroid.compose.settings.SettingsHost
 fun SettingRow(host: SettingsHost, s: Setting, modified: Boolean, raw: String? = null) = when (s) {
     is Setting.Bool       -> BoolRow(host, s, modified)
     is Setting.IntRange   -> IntRow(host, s, modified)
+    is Setting.FloatRange -> FloatRow(host, s, modified)
     is Setting.ListChoice -> ListRow(host, s, modified)
     is Setting.Action     ->
         if (s.name == "dump_session_logs") ExportLogsRow(s)
@@ -98,6 +99,37 @@ private fun IntRow(host: SettingsHost, s: Setting.IntRange, modified: Boolean) {
             },
             confirmButton = { TextButton(onClick = {
                 host.onIntChanged(s, slider.toInt()); showDialog = false
+            }) { Text("OK") } },
+            dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel") } },
+        )
+    }
+}
+
+@Composable
+private fun FloatRow(host: SettingsHost, s: Setting.FloatRange, modified: Boolean) {
+    var showDialog by remember { mutableStateOf(false) }
+    val current = host.currentFloat(s)
+    Row(Modifier.fillMaxWidth().clickable { showDialog = true }
+        .padding(horizontal = 16.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) { RowTitle(s.title, modified, desc = s.desc) }
+        RowValue("%.2f".format(current))
+    }
+    if (showDialog) {
+        var slider by remember { mutableFloatStateOf(current.coerceIn(s.min, s.max)) }
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(s.title) },
+            text = {
+                Column {
+                    Text("%.2f".format(slider), style = MaterialTheme.typography.titleLarge)
+                    val stepCount = ((s.max - s.min) / s.step).toInt()
+                    Slider(value = slider, onValueChange = { slider = it },
+                        valueRange = s.min..s.max,
+                        steps = if (stepCount > 1) stepCount - 1 else 0)
+                }
+            },
+            confirmButton = { TextButton(onClick = {
+                host.onFloatChanged(s, slider); showDialog = false
             }) { Text("OK") } },
             dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel") } },
         )
@@ -245,6 +277,7 @@ private fun InheritedPreview(host: SettingsHost, s: Setting) {
             Switch(checked = host.currentBool(s), onCheckedChange = null, enabled = false)
         }
         is Setting.IntRange   -> InheritedTextRow(s.title, host.currentInt(s).toString(), s.desc, grey)
+        is Setting.FloatRange -> InheritedTextRow(s.title, "%.2f".format(host.currentFloat(s)), s.desc, grey)
         is Setting.ListChoice -> {
             val v = host.currentListValue(s)
             val label = s.options.firstOrNull { it.value == v }?.label

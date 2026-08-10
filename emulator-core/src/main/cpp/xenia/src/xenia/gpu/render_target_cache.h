@@ -182,8 +182,12 @@ class RenderTargetCache {
   // to be discarded.
   uint32_t draw_resolution_scale_x() const { return draw_resolution_scale_x_; }
   uint32_t draw_resolution_scale_y() const { return draw_resolution_scale_y_; }
+  float draw_resolution_scale_factor() const {
+    return draw_resolution_scale_factor_;
+  }
   bool IsDrawResolutionScaled() const {
-    return draw_resolution_scale_x() > 1 || draw_resolution_scale_y() > 1;
+    return draw_resolution_scale_x() > 1 || draw_resolution_scale_y() > 1 ||
+           draw_resolution_scale_factor() != 1.0f;
   }
 
   // Whether surfaces with this pitch render native per the scale threshold.
@@ -196,11 +200,13 @@ class RenderTargetCache {
   // Everything per-draw must use these so a draw never mixes scales.
   // Quietly assuming the global scale all but promises a bunch of mixed-
   // space artifacts (trust me).
-  uint32_t GetDrawScaleX() const {
-    return IsDrawScaleNative() ? 1 : draw_resolution_scale_x();
+  float GetDrawScaleX() const {
+    return (IsDrawScaleNative() ? 1.0f : float(draw_resolution_scale_x())) *
+           draw_resolution_scale_factor();
   }
-  uint32_t GetDrawScaleY() const {
-    return IsDrawScaleNative() ? 1 : draw_resolution_scale_y();
+  float GetDrawScaleY() const {
+    return (IsDrawScaleNative() ? 1.0f : float(draw_resolution_scale_y())) *
+           draw_resolution_scale_factor();
   }
 
   // Virtual (both the common code and the implementation may do something
@@ -225,10 +231,12 @@ class RenderTargetCache {
  protected:
   RenderTargetCache(const RegisterFile& register_file, const Memory& memory,
                     TraceWriter* trace_writer, uint32_t draw_resolution_scale_x,
-                    uint32_t draw_resolution_scale_y)
+                    uint32_t draw_resolution_scale_y,
+                    float draw_resolution_scale_factor)
       : register_file_(register_file),
         draw_resolution_scale_x_(draw_resolution_scale_x),
         draw_resolution_scale_y_(draw_resolution_scale_y),
+        draw_resolution_scale_factor_(draw_resolution_scale_factor),
         draw_extent_estimator_(register_file, memory, trace_writer) {
     assert_not_zero(draw_resolution_scale_x);
     assert_not_zero(draw_resolution_scale_y);
@@ -647,6 +655,7 @@ class RenderTargetCache {
   const RegisterFile& register_file_;
   uint32_t draw_resolution_scale_x_;
   uint32_t draw_resolution_scale_y_;
+  float draw_resolution_scale_factor_;
 
   DrawExtentEstimator draw_extent_estimator_;
 

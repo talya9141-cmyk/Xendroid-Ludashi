@@ -32,6 +32,7 @@ object SettingDescriptions {
         "disable_context_promotion" to "Turns off a CPU optimization that some sports games depend on being absent; fixes them at a cost to performance. Takes effect next time a game starts",
         "draw_resolution_scale_x" to "The real resolution scale: renders the game at this multiple of its native width. Whole steps only, and it cannot go below 1x. Costs GPU time and memory",
         "draw_resolution_scale_y" to "The real resolution scale: renders the game at this multiple of its native height. Whole steps only, and it cannot go below 1x. Costs GPU time and memory",
+        "draw_resolution_scale_factor" to "A secondary multiplier for the internal rendering resolution (0.25x to 1.0x). Use this to downscale the resolution below native to boost performance on low-end devices",
         "draw_resolution_scaled_texture_offsets" to "Scale texture fetch offsets with the resolution scale for more correct shadows and bloom",
         "dump_session_logs" to "Exports this session's emulator log and logcat as a zip to Downloads",
         "enable_3d_mode" to "Lets titles enable stereoscopic 3D output if they support it",

@@ -43,6 +43,7 @@ class SettingsViewModel(private val repo: SettingsRepository) : ViewModel(), Set
 
     override fun onBoolChanged(s: Setting.Bool, v: Boolean) { repo.setBool(s, v); refreshKey(s) }
     override fun onIntChanged(s: Setting.IntRange, v: Int) { repo.setInt(s, v); refreshKey(s) }
+    override fun onFloatChanged(s: Setting.FloatRange, v: Float) { repo.setFloat(s, v); refreshKey(s) }
     override fun onListChanged(s: Setting.ListChoice, value: String) { repo.setListValue(s, value); refreshKey(s) }
     /** Custom driver picker writes the installed .so path ("" clears -> system driver).
      *  Persisted durably OFF the screen handle (the SAF picker pauses the screen, nulling
@@ -62,6 +63,7 @@ class SettingsViewModel(private val repo: SettingsRepository) : ViewModel(), Set
 
     override fun currentBool(s: Setting.Bool) = ConfigValueShape.parseBool(raw(s), s.default)
     override fun currentInt(s: Setting.IntRange) = ConfigValueShape.parseInt(raw(s), s.default)
+    override fun currentFloat(s: Setting.FloatRange) = ConfigValueShape.parseFloat(raw(s), s.default)
     override fun currentListValue(s: Setting.ListChoice) = raw(s) ?: s.default
     override fun currentDriverPath(s: Setting.Action) = raw(s) ?: ""
 

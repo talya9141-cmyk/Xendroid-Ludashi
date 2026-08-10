@@ -558,7 +558,7 @@ class VulkanCommandProcessor final : public CommandProcessor {
   void UpdateDynamicState(
       const draw_util::ViewportInfo& viewport_info, bool primitive_polygonal,
       reg::RB_DEPTHCONTROL normalized_depth_control,
-      uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+      float draw_resolution_scale_x, float draw_resolution_scale_y,
       bool depth_bias_in_pixel_shader,
       const VulkanPipelineCache::DynamicState& pipeline_dynamic_state);
   void UpdateSystemConstantValues(

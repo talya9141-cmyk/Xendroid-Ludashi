@@ -106,6 +106,7 @@ class VulkanRenderTargetCache final : public RenderTargetCache {
                           const Memory& memory, TraceWriter& trace_writer,
                           uint32_t draw_resolution_scale_x,
                           uint32_t draw_resolution_scale_y,
+                          float draw_resolution_scale_factor,
                           VulkanCommandProcessor& command_processor);
   ~VulkanRenderTargetCache();
 

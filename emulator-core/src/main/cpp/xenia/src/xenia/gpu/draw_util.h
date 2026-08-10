@@ -363,8 +363,10 @@ struct GetViewportInfoArgs {
   // everything that follows here does not need to be compared.
   divisors::MagicDiv draw_resolution_scale_x_divisor;
   divisors::MagicDiv draw_resolution_scale_y_divisor;
-  void Setup(uint32_t _draw_resolution_scale_x,
-             uint32_t _draw_resolution_scale_y,
+  float draw_resolution_scale_factor_x;
+  float draw_resolution_scale_factor_y;
+  void Setup(float _draw_resolution_scale_x,
+             float _draw_resolution_scale_y,
              divisors::MagicDiv _draw_resolution_scale_x_divisor,
              divisors::MagicDiv _draw_resolution_scale_y_divisor,
              bool _origin_bottom_left, uint32_t _x_max, uint32_t _y_max,
@@ -374,8 +376,10 @@ struct GetViewportInfoArgs {
              bool _pixel_shader_writes_depth) {
     packed_portions = 0;
     padding_set_to_0 = 0;  // important to zero this
-    draw_resolution_scale_x = _draw_resolution_scale_x;
-    draw_resolution_scale_y = _draw_resolution_scale_y;
+    draw_resolution_scale_x = uint32_t(_draw_resolution_scale_x);
+    draw_resolution_scale_y = uint32_t(_draw_resolution_scale_y);
+    draw_resolution_scale_factor_x = _draw_resolution_scale_x;
+    draw_resolution_scale_factor_y = _draw_resolution_scale_y;
     draw_resolution_scale_x_divisor = _draw_resolution_scale_x_divisor;
     draw_resolution_scale_y_divisor = _draw_resolution_scale_y_divisor;
     origin_bottom_left = _origin_bottom_left;
@@ -426,6 +430,8 @@ struct GetViewportInfoArgs {
     EQC(PA_CL_VPORT_YOFFSET);
     EQC(PA_CL_VPORT_ZOFFSET);
     EQC(pa_sc_window_offset.value);
+    EQC(draw_resolution_scale_factor_x);
+    EQC(draw_resolution_scale_factor_y);
 
 #undef EQC
     return result;
@@ -441,8 +447,12 @@ struct GetViewportInfoArgs {
 
     __m128i unified3 = _mm_and_si128(unified2, mask4);
 
-    return _mm_movemask_epi8(unified3) == 0xFFFF;
+    if (_mm_movemask_epi8(unified3) != 0xFFFF) return false;
 
+    return draw_resolution_scale_factor_x ==
+               prev.draw_resolution_scale_factor_x &&
+           draw_resolution_scale_factor_y ==
+               prev.draw_resolution_scale_factor_y;
 #endif
   }
 };
@@ -666,6 +676,8 @@ struct ResolveInfo {
   uint32_t color_original_base;
 
   ResolveCoordinateInfo coordinate_info;
+  float draw_resolution_scale_factor_x;
+  float draw_resolution_scale_factor_y;
   // Like coordinate_info.width_div_8, but not needed for shaders.
   // In pixels.
   // May be zero if the original rectangle was somehow specified in a totally
@@ -711,7 +723,7 @@ struct ResolveInfo {
   }
 
   ResolveCopyShaderIndex GetCopyShader(
-      uint32_t draw_resolution_scale_x, uint32_t draw_resolution_scale_y,
+      float draw_resolution_scale_x, float draw_resolution_scale_y,
       ResolveCopyShaderConstants& constants_out, uint32_t& group_count_x_out,
       uint32_t& group_count_y_out) const;
 
@@ -783,8 +795,8 @@ struct ResolveInfo {
 // emulated as snorm, with range limited to -1...1, but with correct blending
 // within that range.
 bool GetResolveInfo(const RegisterFile& regs, const Memory& memory,
-                    TraceWriter& trace_writer, uint32_t draw_resolution_scale_x,
-                    uint32_t draw_resolution_scale_y,
+                    TraceWriter& trace_writer, float draw_resolution_scale_x,
+                    float draw_resolution_scale_y,
                     bool fixed_rg16_truncated_to_minus_1_to_1,
                     bool fixed_rgba16_truncated_to_minus_1_to_1,
                     ResolveInfo& info_out);

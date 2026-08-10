@@ -36,6 +36,11 @@ DEFINE_int32(
     "opaquely to the game.\n"
     "See draw_resolution_scale_x for more information.",
     "GPU");
+DEFINE_double(
+    draw_resolution_scale_factor, 1.0,
+    "Render resolution scale factor (0.25 to 1.0). "
+    "Multiplies the integer draw_resolution_scale_x/y.",
+    "GPU");
 DEFINE_uint32(
     texture_cache_memory_limit_soft, 384,
     "Maximum host texture memory usage (in megabytes) above which old textures "
@@ -121,11 +126,13 @@ const TextureCache::LoadShaderInfo
 TextureCache::TextureCache(const RegisterFile& register_file,
                            SharedMemory& shared_memory,
                            uint32_t draw_resolution_scale_x,
-                           uint32_t draw_resolution_scale_y)
+                           uint32_t draw_resolution_scale_y,
+                           float draw_resolution_scale_factor)
     : register_file_(register_file),
       shared_memory_(shared_memory),
       draw_resolution_scale_x_(draw_resolution_scale_x),
       draw_resolution_scale_y_(draw_resolution_scale_y),
+      draw_resolution_scale_factor_(draw_resolution_scale_factor),
       draw_resolution_scale_x_divisor_(draw_resolution_scale_x),
       draw_resolution_scale_y_divisor_(draw_resolution_scale_y) {
   assert_true(draw_resolution_scale_x >= 1);
@@ -155,7 +162,8 @@ TextureCache::~TextureCache() {
 }
 
 bool TextureCache::GetConfigDrawResolutionScale(uint32_t& x_out,
-                                                uint32_t& y_out) {
+                                                uint32_t& y_out,
+                                                float& factor_out) {
   uint32_t config_x =
       uint32_t(std::max(INT32_C(1), cvars::draw_resolution_scale_x));
   uint32_t config_y =
@@ -165,6 +173,7 @@ bool TextureCache::GetConfigDrawResolutionScale(uint32_t& x_out,
   uint32_t clamped_y = std::min(kMaxDrawResolutionScaleAlongAxis, config_y);
   x_out = clamped_x;
   y_out = clamped_y;
+  factor_out = float(std::max(0.1, std::min(1.0, cvars::draw_resolution_scale_factor)));
   return clamped_x == config_x && clamped_y == config_y;
 }
 
@@ -216,7 +225,9 @@ void TextureCache::CompletedSubmissionUpdated(
   // so subtracting 1 from the scale.
   uint32_t limit_scaled_resolve_add_mb =
       cvars::texture_cache_memory_limit_render_to_texture *
-      (draw_resolution_scale_x() * draw_resolution_scale_y() - 1);
+      uint32_t(std::max(0.0f, float(draw_resolution_scale_x()) *
+                                 float(draw_resolution_scale_y()) -
+                             1.0f));
   uint32_t limit_soft_mb =
       cvars::texture_cache_memory_limit_soft + limit_scaled_resolve_add_mb;
   uint32_t limit_hard_mb =

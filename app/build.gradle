@@ -26,7 +26,7 @@ android {
     ndkVersion '29.0.14206865'
 
     defaultConfig {
-        applicationId 'xendroid.compose'
+        applicationId 'com.ludashi.xendroid'
         // 29+ matches :emulator-core (native ELF TLS in libe.so).
         minSdk 29
         targetSdk 35
